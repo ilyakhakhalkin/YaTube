@@ -323,14 +323,12 @@ class PostsPagesTests(TestCase):
         response = self.client.get('/')
         print(response.context['page_obj'][0])
 
-        # new_post = 
         Post.objects.create(
             text='Новый пост',
             author=self.user,
             group=self.group,
         )
 
-        # response2 = 
         self.client.get('/')
 
         # print()
