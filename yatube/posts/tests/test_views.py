@@ -323,33 +323,27 @@ class PostsPagesTests(TestCase):
         response = self.client.get('/')
         print(response.context['page_obj'][0])
 
-        new_post = Post.objects.create(
+        # new_post = 
+        Post.objects.create(
             text='Новый пост',
             author=self.user,
             group=self.group,
         )
 
-        response2 = self.client.get('/')
+        # response2 = 
+        self.client.get('/')
 
         # print()
         # print()
         # print()
         # print()
-        # print()
-        # print()
-        # print()
-        # print()
-        # print()
+
         # print(response2)
+
         # print()
         # print()
         # print()
-        # print()
-        # print()
-        # print()
-        # print()
-        # print()
-        # self.assertEquals(response.context['page_obj'], response2.context['page_obj'])
+        # self.assertEquals(response.context, response2.context)
 
         cache.clear()
         response3 = self.client.get('/')
@@ -406,4 +400,3 @@ class PaginatorViewsTest(TestCase):
                     len(response.context['page_obj']),
                     PAGINATOR_ALL_POSTS_COUNT - settings.POSTS_AMOUNT
                 )
-

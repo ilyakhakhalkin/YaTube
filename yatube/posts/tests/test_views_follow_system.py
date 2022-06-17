@@ -1,4 +1,3 @@
-from itertools import count
 from django.test import Client, TestCase
 from django.urls import reverse
 
@@ -34,7 +33,10 @@ class PostsPagesTests(TestCase):
         """Проверка подписок"""
 
         response = self.follow_author(author=self.user_author, user=self.user)
-        self.assertEquals(response.context['page_obj'][0].author, self.user_author)
+        self.assertEquals(
+            response.context['page_obj'][0].author,
+            self.user_author
+        )
 
         count = Follow.objects.filter(
             author=self.user_author,
@@ -42,10 +44,10 @@ class PostsPagesTests(TestCase):
         ).count()
 
         self.follow_author(author=self.user_author, user=self.user)
-        
+
         should_be_the_same_count = Follow.objects.filter(
             author=self.user_author,
-            user=self.user
+            user=self.user,
         ).count()
 
         self.assertEquals(count, should_be_the_same_count)

@@ -49,7 +49,10 @@ def profile(request, username):
 
     if not request.user.is_anonymous:
         try:
-            following = Follow.objects.get(author=current_user, user=request.user)
+            following = Follow.objects.get(
+                author=current_user,
+                user=request.user
+            )
         except Follow.DoesNotExist:
             following = False
 
