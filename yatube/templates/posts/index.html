@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block title %}
+  Последние обновления на сайте
+{% endblock %}
+
+{% block content %}
+  {% include 'posts/includes/switcher.html' %}
+  
+  {% comment %} {% load cache %}
+  {% cache 20 index_page page_obj %} {% endcomment %}
+    <h1>Последние обновления на сайте</h1>
+    {% for post in page_obj %}
+      {% include 'includes/article.html' with SHOW_GROUP_LINK=True SHOW_PROFILE_LINK=True %}
+    {% endfor %}
+  {% comment %} {% endcache %} {% endcomment %}
+
+  {% include 'posts/includes/paginator.html' %}
+{% endblock %}

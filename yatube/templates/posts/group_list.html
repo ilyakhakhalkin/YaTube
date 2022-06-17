@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block title %}
+  Записи сообщества {{ group.title }}
+{% endblock %}
+
+{% block content %}
+  <h1> {{ group.title }} </h1>
+  <p>
+    {{ group.description }}
+  </p>
+
+  {% for post in page_obj %}
+    {% include 'includes/article.html' with SHOW_PROFILE_LINK=True %}
+
+  {% empty %}
+    Здесь будет информация о группах проекта Yatube
+  {% endfor %}
+
+  {% include 'posts/includes/paginator.html' %}
+   
+{% endblock %}
