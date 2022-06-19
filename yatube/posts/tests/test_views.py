@@ -1,5 +1,3 @@
-from enum import auto
-from http import HTTPStatus
 from django.test import Client, TestCase
 from django.urls import reverse
 from django import forms
@@ -306,7 +304,7 @@ class PostsPagesTests(TestCase):
             comment['text']
         )
         self.assertEquals(response.context['comments'][0].author, self.user2)
-        
+
         form_fields = {
             'text': forms.fields.CharField,
         }

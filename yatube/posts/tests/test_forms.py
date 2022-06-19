@@ -64,7 +64,7 @@ class FormsTest(TestCase):
             'image': self.uploaded,
         }
 
-        response = self.authorized_client.post(
+        self.authorized_client.post(
             reverse('posts:post_create'),
             data=form_data,
         )
@@ -218,7 +218,7 @@ class FormsTest(TestCase):
                 id=old_post.id,
             ).exists()
         )
-    
+
     def test_comment_form_authorized(self):
         """Проверка формы комментария, пользователь авторизован"""
 
@@ -231,7 +231,8 @@ class FormsTest(TestCase):
             data=form_data,
         )
 
-        self.assertTrue(Comment.objects.filter(
+        self.assertTrue(
+            Comment.objects.filter(
                 post=self.post,
                 author=self.user,
                 text=form_data['text'],
@@ -252,7 +253,8 @@ class FormsTest(TestCase):
             data=form_data,
         )
 
-        self.assertFalse(Comment.objects.filter(
+        self.assertFalse(
+            Comment.objects.filter(
                 post=self.post,
                 author=self.user,
                 text=form_data['text'],

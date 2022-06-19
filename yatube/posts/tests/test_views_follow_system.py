@@ -67,7 +67,7 @@ class PostsPagesTests(TestCase):
             author=self.user_author,
             user=self.user,
         )
-        
+
         self.assertTrue(
             Follow.objects.filter(
                 user=self.user,
@@ -75,7 +75,7 @@ class PostsPagesTests(TestCase):
             ).exists()
         )
 
-        response = self.authorized_client.get(
+        self.authorized_client.get(
             reverse(
                 'posts:profile_unfollow',
                 kwargs={'username': self.user_author}

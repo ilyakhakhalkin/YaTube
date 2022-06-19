@@ -11,7 +11,7 @@ SMALL_GIF = (
 
 
 def create_image():
-    image_name = f'small.gif'
+    image_name = 'small.gif'
     return SimpleUploadedFile(
         name=image_name,
         content=SMALL_GIF,

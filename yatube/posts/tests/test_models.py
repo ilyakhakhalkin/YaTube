@@ -1,4 +1,3 @@
-from attr import field
 from django.conf import settings
 from django.test import TestCase
 
@@ -7,11 +6,11 @@ from ..models import Comment, Follow, Group, Post, User
 
 def compare_verboses(self, expected, model_obj):
     for field, expected_value in expected.items():
-            with self.subTest(field=field):
-                self.assertEqual(
-                    model_obj._meta.get_field(field).verbose_name,
-                    expected_value
-                )
+        with self.subTest(cur_field=field):
+            self.assertEqual(
+                model_obj._meta.get_field(field).verbose_name,
+                expected_value
+            )
 
 
 class PostsModelTest(TestCase):
@@ -56,7 +55,7 @@ class PostsModelTest(TestCase):
         }
 
         for field, expected_value in field_help_textes.items():
-            with self.subTest(field=field):
+            with self.subTest(cur_field=field):
                 self.assertEqual(
                     self.post._meta.get_field(field).help_text, expected_value)
 
@@ -65,10 +64,10 @@ class GroupModelTest(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        
+
         cls.group = Group.objects.create(
             title='Тестовая группа',
-            description='Тестовое описание', 
+            description='Тестовое описание',
             slug='Тестовый слаг',
         )
 
@@ -118,7 +117,7 @@ class CommentModelTest(TestCase):
         }
 
         self.assertEqual(
-            self.comment._meta.get_field('text').help_text, 
+            self.comment._meta.get_field('text').help_text,
             field_help_textes['text']
         )
 

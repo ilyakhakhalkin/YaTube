@@ -2,7 +2,7 @@ from django.shortcuts import get_object_or_404, render
 from django.shortcuts import redirect
 from django.contrib.auth.decorators import login_required
 
-from .models import Comment, Follow, Group, Post, User
+from .models import Follow, Group, Post, User
 from .forms import PostForm, CommentForm
 from .paginator_custom import paginator_custom
 
@@ -47,8 +47,7 @@ def profile(request, username):
 
     following = (
         (not request.user.is_anonymous)
-        and
-        Follow.objects.filter(
+        and Follow.objects.filter(
             author=author,
             user=request.user
         ).exists
