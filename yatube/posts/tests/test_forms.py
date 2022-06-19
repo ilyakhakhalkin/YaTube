@@ -1,16 +1,20 @@
-from django.test import Client, TestCase
+from django.test import Client, TestCase, override_settings
 from django.urls import reverse
-from django.test import override_settings
 from django.conf import settings
+from http import HTTPStatus
 import shutil
+import tempfile
 
-from ..models import Post, Group, User
 from .create_image import create_image
+from ..models import Comment, Post, Group, User
 
 
+MEDIA_ROOT = tempfile.mkdtemp()
+
+
+@override_settings(MEDIA_ROOT=MEDIA_ROOT)
 class FormsTest(TestCase):
     @classmethod
-    @override_settings(MEDIA_ROOT=(settings.TEST_MEDIA_ROOT + '/media'))
     def setUpClass(cls):
         super().setUpClass()
         cls.user = User.objects.create_user(username='tester')
@@ -35,6 +39,8 @@ class FormsTest(TestCase):
         )
 
     def setUp(self):
+        shutil.rmtree(settings.TEST_MEDIA_ROOT, ignore_errors=True)
+
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user)
 
@@ -43,26 +49,23 @@ class FormsTest(TestCase):
         self.authorized_not_author.force_login(self.user_not_author)
 
     def tearDown(self):
-        try:
-            shutil.rmtree(settings.TEST_MEDIA_ROOT)
-        except OSError:
-            pass
+        shutil.rmtree(settings.TEST_MEDIA_ROOT, ignore_errors=True)
 
         return super().tearDown()
 
     def test_create_post(self):
         """Создание поста при отправке валидной формы"""
 
-        image = create_image()
+        self.uploaded = create_image()
 
         form_data = {
-            'text': 'Новый пост',
+            'text': 'Новый пост221321',
             'group': self.group.id,
-            'image': image,
+            'image': self.uploaded,
         }
 
-        self.authorized_client.post(
-            reverse('posts:post_edit', args=(self.post.id,)),
+        response = self.authorized_client.post(
+            reverse('posts:post_create'),
             data=form_data,
         )
 
@@ -71,6 +74,7 @@ class FormsTest(TestCase):
                 text=form_data['text'],
                 group=form_data['group'],
                 author=self.user,
+                image=f'posts/{self.uploaded}'
             ).exists()
         )
 
@@ -214,3 +218,45 @@ class FormsTest(TestCase):
                 id=old_post.id,
             ).exists()
         )
+    
+    def test_comment_form_authorized(self):
+        """Проверка формы комментария, пользователь авторизован"""
+
+        form_data = {
+            'text': 'тестовый коммент'
+        }
+
+        response = self.authorized_client.post(
+            reverse('posts:add_comment', kwargs={'post_id': self.post.id}),
+            data=form_data,
+        )
+
+        self.assertTrue(Comment.objects.filter(
+                post=self.post,
+                author=self.user,
+                text=form_data['text'],
+            ).exists()
+        )
+
+        self.assertEquals(response.status_code, HTTPStatus.FOUND)
+    
+    def test_comment_form_guest(self):
+        """Проверка формы комментария, гостевой пользователь"""
+
+        form_data = {
+            'text': 'тестовый коммент'
+        }
+
+        response = self.client.post(
+            reverse('posts:add_comment', kwargs={'post_id': self.post.id}),
+            data=form_data,
+        )
+
+        self.assertFalse(Comment.objects.filter(
+                post=self.post,
+                author=self.user,
+                text=form_data['text'],
+            ).exists()
+        )
+
+        self.assertEquals(response.status_code, HTTPStatus.FOUND)

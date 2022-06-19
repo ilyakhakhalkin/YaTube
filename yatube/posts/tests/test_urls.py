@@ -1,6 +1,5 @@
 from http import HTTPStatus
 from django.test import TestCase, Client
-from django.core.cache import cache
 
 from ..models import Post, Group, User
 
@@ -26,7 +25,6 @@ class PostsURLTests(TestCase):
         )
 
     def setUp(self):
-        cache.clear()
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user)
 
@@ -113,6 +111,7 @@ class PostsURLTests(TestCase):
             f'/posts/{self.post.id}/edit/':
                 f'/auth/login/?next=/posts/{self.post.id}/edit/',
             '/create/': '/auth/login/?next=/create/',
+            '/follow/': '/auth/login/?next=/follow/',
         }
 
         for url, redirect_url in url_redirects.items():

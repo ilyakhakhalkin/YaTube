@@ -49,6 +49,7 @@ class Post(CreatedModel):
         related_name='posts',
         verbose_name='Автор',
     )
+
     image = models.ImageField(
         'Картинка',
         upload_to='posts/',
@@ -70,13 +71,13 @@ class Comment(CreatedModel):
         on_delete=models.CASCADE,
         blank=False,
         null=False,
-        related_name='post',
+        related_name='comments',
         verbose_name='Публикация',
     )
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='post',
+        related_name='author',
         verbose_name='Автор',
     )
     text = models.TextField(

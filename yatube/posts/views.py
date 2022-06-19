@@ -1,14 +1,12 @@
 from django.shortcuts import get_object_or_404, render
 from django.shortcuts import redirect
 from django.contrib.auth.decorators import login_required
-from django.views.decorators.cache import cache_page
 
 from .models import Comment, Follow, Group, Post, User
 from .forms import PostForm, CommentForm
 from .paginator_custom import paginator_custom
 
 
-@cache_page(20, key_prefix="index_page")
 def index(request):
     template = 'posts/index.html'
 
@@ -26,7 +24,7 @@ def group_posts(request, slug):
     template = 'posts/group_list.html'
 
     group = get_object_or_404(Group, slug=slug)
-    post_list = group.posts.all()
+    post_list = Post.objects.select_related('group').filter(group=group)
     page_obj = paginator_custom(request, post_list)
 
     context = {
@@ -38,41 +36,38 @@ def group_posts(request, slug):
 
 
 def profile(request, username):
-    current_user = get_object_or_404(User, username=username)
-    post_list = current_user.posts.all()
+    author = get_object_or_404(User, username=username)
+    post_list = author.posts.all()
     page_obj = paginator_custom(request, post_list)
 
     context = {
         'page_obj': page_obj,
-        'author': current_user,
+        'author': author,
     }
 
-    if not request.user.is_anonymous:
-        try:
-            following = Follow.objects.get(
-                author=current_user,
-                user=request.user
-            )
-        except Follow.DoesNotExist:
-            following = False
+    following = (
+        (not request.user.is_anonymous)
+        and
+        Follow.objects.filter(
+            author=author,
+            user=request.user
+        ).exists
+    )
 
-        context['following'] = following
+    context['following'] = following
 
     return render(request, 'posts/profile.html', context)
 
 
 def post_detail(request, post_id):
     post = get_object_or_404(Post, pk=post_id)
-    comments = Comment.objects.filter(post=post)
-    # following = Follow.objects.get(author=post_id.author, user=request.user)
-
+    comments = post.comments.all()
     form = CommentForm()
 
     context = {
         'post': post,
         'comments': comments,
         'form': form,
-        # 'following': following
     }
 
     return render(request, 'posts/post_detail.html', context)
@@ -136,12 +131,8 @@ def add_comment(request, post_id):
 def follow_index(request):
     """Публикации избранных авторов"""
 
-    subscriptions = Follow.objects.filter(user=request.user)
-    authors = []
-    for sub in subscriptions:
-        authors.append(sub.author)
+    posts = Post.objects.filter(author__following__user=request.user)
 
-    posts = Post.objects.filter(author__in=authors)
     if len(posts) == 0:
         empty_page = paginator_custom(request, [])
         context = {
@@ -166,9 +157,10 @@ def profile_follow(request, username):
     if request.user == author:
         return follow_index(request)
 
-    if not Follow.objects.filter(author=author, user=request.user).exists():
-        subscription = Follow(author=author, user=request.user)
-        subscription.save()
+    Follow.objects.get_or_create(
+        author=author,
+        user=request.user,
+    )
 
     return follow_index(request)
 
@@ -178,12 +170,6 @@ def profile_unfollow(request, username):
     """Дизлайк, отписка"""
 
     author = get_object_or_404(User, username=username)
-    try:
-        Follow.objects.get(author=author, user=request.user).delete()
-        return follow_index(request)
+    Follow.objects.filter(author=author, user=request.user).delete()
 
-    except Follow.DoesNotExist:
-        context = {
-            'NO_SUBSCRIPTIONS': True,
-        }
-        return render(request, 'posts/follow.html', context)
+    return render(request, 'posts/follow.html')

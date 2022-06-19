@@ -5,14 +5,14 @@
 {% endblock %}
 
 {% block content %}
-  {% include 'posts/includes/switcher.html' %}
+  {% include 'posts/includes/switcher.html' with FOLLOW=True %}
   <h1>Избранные авторы</h1>
-  {% if NO_SUBSCRIPTIONS %}
-    Вы не подписаны ни на одного автора
-  {% endif %}
 
   {% for post in page_obj %}
     {% include 'includes/article.html' with SHOW_GROUP_LINK=True SHOW_PROFILE_LINK=True %}
+
+    {% empty %}
+      Вы не подписаны ни на одного автора
   {% endfor %}
 
   {% include 'posts/includes/paginator.html' %}

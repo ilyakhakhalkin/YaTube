@@ -1,3 +1,4 @@
+from enum import auto
 from http import HTTPStatus
 from django.test import Client, TestCase
 from django.urls import reverse
@@ -13,9 +14,9 @@ from .create_image import create_image
 PAGINATOR_ALL_POSTS_COUNT = 13
 
 
+@override_settings(MEDIA_ROOT=(settings.TEST_MEDIA_ROOT + '/media'))
 class PostsPagesTests(TestCase):
     @classmethod
-    @override_settings(MEDIA_ROOT=(settings.TEST_MEDIA_ROOT + '/media'))
     def setUpClass(cls):
         super().setUpClass()
         cls.user = User.objects.create_user(username='tester')
@@ -55,7 +56,7 @@ class PostsPagesTests(TestCase):
         cls.post_list2 = cls.post_list2[::-1]
 
     def setUp(self):
-        cache.clear()
+
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user2)
 
@@ -99,7 +100,9 @@ class PostsPagesTests(TestCase):
             ):
                 'posts/create_post.html',
             reverse('posts:post_create'):
-                'posts/create_post.html'
+                'posts/create_post.html',
+            reverse('posts:follow_index'):
+                'posts/follow.html',
         }
 
         for reverse_name, template in templates_url_names.items():
@@ -285,7 +288,7 @@ class PostsPagesTests(TestCase):
     def test_comments_authorized(self):
         """Публикация комментария авторизированным пользователем"""
         comment = {
-            'text': 'test comment'
+            'text': 'test comment',
         }
 
         self.authorized_client.post(
@@ -295,58 +298,46 @@ class PostsPagesTests(TestCase):
             ), comment
         )
 
-        response = self.authorized_client.get('/posts/1/')
+        response = self.authorized_client.get(
+            reverse('posts:post_detail', kwargs={'post_id': 1})
+        )
         self.assertEquals(
             response.context['comments'][0].text,
             comment['text']
         )
         self.assertEquals(response.context['comments'][0].author, self.user2)
-
-    def test_comments_guest(self):
-        """Публикация комментария гостевым пользователем"""
-        comment = {
-            'text': 'test comment'
+        
+        form_fields = {
+            'text': forms.fields.CharField,
         }
 
-        response = self.client.post(
-            reverse(
-                'posts:add_comment',
-                kwargs={'post_id': 1}
-            ), comment
-        )
-
-        self.assertEquals(response.status_code, HTTPStatus.FOUND)
+        for value, expected in form_fields.items():
+            with self.subTest(value=value):
+                form_field = response.context.get('form').fields.get(value)
+                self.assertIsInstance(form_field, expected)
 
     def test_index_page_cache(self):
         """Тест кеша главной страницы"""
 
-        response = self.client.get('/')
-        print(response.context['page_obj'][0])
+        response = self.authorized_client.get(
+            reverse('posts:index')
+        )
 
         Post.objects.create(
             text='Новый пост',
             author=self.user,
-            group=self.group,
         )
 
-        self.client.get('/')
-
-        # print()
-        # print()
-        # print()
-        # print()
-
-        # print(response2)
-
-        # print()
-        # print()
-        # print()
-        # self.assertEquals(response.context, response2.context)
+        response2 = self.authorized_client.get(
+            reverse('posts:index')
+        )
+        self.assertEquals(response.content, response2.content)
 
         cache.clear()
-        response3 = self.client.get('/')
-        print(response3.context['page_obj'][0])
-        self.assertNotEquals(response, response3)
+        response3 = self.authorized_client.get(
+            reverse('posts:index')
+        )
+        self.assertNotEquals(response2.content, response3.content)
 
 
 class PaginatorViewsTest(TestCase):
@@ -372,8 +363,6 @@ class PaginatorViewsTest(TestCase):
             )
 
     def setUp(self):
-        cache.clear()
-
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user)
 

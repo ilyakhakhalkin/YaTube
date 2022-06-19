@@ -33,6 +33,14 @@ class PostsPagesTests(TestCase):
         """Проверка подписок"""
 
         response = self.follow_author(author=self.user_author, user=self.user)
+
+        self.assertTrue(
+            Follow.objects.filter(
+                author=self.user_author,
+                user=self.user
+            ).exists()
+        )
+
         self.assertEquals(
             response.context['page_obj'][0].author,
             self.user_author
@@ -55,14 +63,31 @@ class PostsPagesTests(TestCase):
     def test_unfollow(self):
         """Проверка отписок"""
 
+        Follow.objects.create(
+            author=self.user_author,
+            user=self.user,
+        )
+        
+        self.assertTrue(
+            Follow.objects.filter(
+                user=self.user,
+                author=self.user_author,
+            ).exists()
+        )
+
         response = self.authorized_client.get(
             reverse(
                 'posts:profile_unfollow',
-                kwargs={'username': self.user}
+                kwargs={'username': self.user_author}
             )
         )
 
-        self.assertTrue(response.context['NO_SUBSCRIPTIONS'])
+        self.assertFalse(
+            Follow.objects.filter(
+                user=self.user,
+                author=self.user_author,
+            ).exists()
+        )
 
     def test_new_post_for_subscribers(self):
         """Проверка выдачи нового поста подписчикам"""
