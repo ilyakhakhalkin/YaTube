@@ -115,5 +115,16 @@ class Follow(models.Model):
         verbose_name = ('Подписки')
         verbose_name_plural = ('Подписки')
 
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'author'],
+                name='unique_subscription'
+            ),
+            models.CheckConstraint(
+                check=~models.Q(user=models.F('author')),
+                name='user_cannot_be_equal_author'
+            ),
+        ]
+
     def __str__(self):
         return self.name
