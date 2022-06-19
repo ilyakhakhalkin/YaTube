@@ -240,7 +240,7 @@ class FormsTest(TestCase):
         )
 
         self.assertEquals(response.status_code, HTTPStatus.FOUND)
-    
+
     def test_comment_form_guest(self):
         """Проверка формы комментария, гостевой пользователь"""
 
