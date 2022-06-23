@@ -19,8 +19,6 @@ class PostsPagesTests(TestCase):
         super().setUpClass()
         cls.user = User.objects.create_user(username='tester')
         cls.user2 = User.objects.create_user(username='tester2')
-        cls.post_list1 = []
-        cls.post_list2 = []
 
         cls.group = Group.objects.create(
             title='Тестовая группа',
@@ -33,28 +31,21 @@ class PostsPagesTests(TestCase):
             description='раз два раз проверка',
             slug='second-test-slug'
         )
+        
+        cls.post = Post.objects.create(
+            text='Текст поста группа 2 юзер 2',
+            author=cls.user2,
+            group=cls.group2,
+        )
 
-        cls.post_list2 = Post.objects.bulk_create([
-            Post(
-                text=f'Текст поста #{i + 1}',
-                author=cls.user2,
-                group=cls.group2,
-            ) for i in range(settings.POSTS_AMOUNT)
-        ])
-
-        cls.post_list1 = Post.objects.bulk_create([
-            Post(
-                text=f'Текст поста #{i + 11}',
-                author=cls.user,
-                group=cls.group,
-            ) for i in range(settings.POSTS_AMOUNT)
-        ])
-
-        cls.post_list1 = cls.post_list1[::-1]
-        cls.post_list2 = cls.post_list2[::-1]
+        cls.post2 = Post.objects.create(
+            text='Текст поста группа 1 юзер 1',
+            author=cls.user,
+            group=cls.group,
+        )
 
     def setUp(self):
-
+        cache.clear()
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user2)
 
@@ -108,30 +99,25 @@ class PostsPagesTests(TestCase):
                 response = self.authorized_client.get(reverse_name)
                 self.assertTemplateUsed(response, template)
 
-    def assert_post_lists(self, res_posts, db_posts):
-        """Принимает на вход два списка постов и сравнивает их поля"""
-
-        for obj_num in range(len(res_posts)):
-            self.assertEquals(
-                res_posts[obj_num].group,
-                db_posts[obj_num].group
-            )
-
-            self.assertEquals(
-                res_posts[obj_num].text,
-                db_posts[obj_num].text
-            )
-
-            self.assertEquals(
-                res_posts[obj_num].author,
-                db_posts[obj_num].author
-            )
-
     def test_index_page_show_correct_context(self):
         """Проверка контекста страницы index"""
 
         response = self.authorized_client.get(reverse('posts:index'))
-        self.assert_post_lists(response.context['page_obj'], self.post_list1)
+ 
+        self.assertEquals(
+            response.context['page_obj'][0].group,
+            self.post2.group
+        )
+
+        self.assertEquals(
+            response.context['page_obj'][0].text,
+            self.post2.text
+        )
+
+        self.assertEquals(
+            response.context['page_obj'][0].author,
+            self.post2.author
+        )
 
     def test_group_list_page_show_correct_context(self):
         """Проверка контекста страницы group_list,
@@ -145,7 +131,21 @@ class PostsPagesTests(TestCase):
             )
         )
 
-        self.assert_post_lists(response.context['page_obj'], self.post_list2)
+        self.assertEquals(
+            response.context['page_obj'][0].group,
+            self.post.group
+        )
+
+        self.assertEquals(
+            response.context['page_obj'][0].text,
+            self.post.text
+        )
+
+        self.assertEquals(
+            response.context['page_obj'][0].author,
+            self.post.author
+        )
+
 
     def test_profile_page_show_correct_context(self):
         """Проверка контекста страницы profile,
@@ -158,7 +158,20 @@ class PostsPagesTests(TestCase):
             )
         )
 
-        self.assert_post_lists(response.context['page_obj'], self.post_list2)
+        self.assertEquals(
+            response.context['page_obj'][0].group,
+            self.post.group
+        )
+
+        self.assertEquals(
+            response.context['page_obj'][0].text,
+            self.post.text
+        )
+
+        self.assertEquals(
+            response.context['page_obj'][0].author,
+            self.post.author
+        )
 
     def test_post_detail_page_show_correct_context(self):
         """Проверка контекста страницы поста"""
@@ -170,9 +183,19 @@ class PostsPagesTests(TestCase):
             )
         )
 
-        self.assert_post_lists(
-            [response.context['post']],
-            [self.post_list2[settings.POSTS_AMOUNT - 1]]
+        self.assertEquals(
+            response.context['post'].group,
+            self.post.group
+        )
+
+        self.assertEquals(
+            response.context['post'].text,
+            self.post.text
+        )
+
+        self.assertEquals(
+            response.context['post'].author,
+            self.post.author
         )
 
     def test_edit_post_page_show_correct_context(self):
@@ -317,8 +340,7 @@ class PostsPagesTests(TestCase):
     def test_index_page_cache(self):
         """Тест кеша главной страницы"""
 
-        # response =
-        self.authorized_client.get(
+        response = self.authorized_client.get(
             reverse('posts:index')
         )
 
@@ -327,18 +349,16 @@ class PostsPagesTests(TestCase):
             author=self.user,
         )
 
-        # response2 =
-        self.authorized_client.get(
+        response2 = self.authorized_client.get(
             reverse('posts:index')
         )
-        # self.assertEquals(response.content, response2.content)
+        self.assertEqual(response.content, response2.content)
 
         cache.clear()
-        # response3 =
-        self.authorized_client.get(
+        response3 = self.authorized_client.get(
             reverse('posts:index')
         )
-        # self.assertNotEquals(response2.content, response3.content)
+        self.assertNotEqual(response2.content, response3.content)
 
 
 class PaginatorViewsTest(TestCase):
