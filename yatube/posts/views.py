@@ -1,6 +1,7 @@
 from django.shortcuts import get_object_or_404, render
 from django.shortcuts import redirect
 from django.contrib.auth.decorators import login_required
+from django.urls import reverse
 
 from .models import Follow, Group, Post, User
 from .forms import PostForm, CommentForm
@@ -37,7 +38,7 @@ def group_posts(request, slug):
 
 def profile(request, username):
     author = get_object_or_404(User, username=username)
-    post_list = author.posts.select_related('group').filter(author=author)
+    post_list = author.posts.select_related('group')
     page_obj = paginator_custom(request, post_list)
 
     following = (
@@ -131,15 +132,15 @@ def follow_index(request):
 
     posts = Post.objects.filter(author__following__user=request.user)
 
-    if len(posts) == 0:
-        empty_page = paginator_custom(request, [])
-        context = {
-            'page_obj': empty_page,
-        }
-    else:
+    if posts.exists():
         page_obj = paginator_custom(request, posts)
         context = {
             'page_obj': page_obj,
+        }
+    else:
+        empty_page = paginator_custom(request, [])
+        context = {
+            'page_obj': empty_page,
         }
 
     return render(request, 'posts/follow.html', context)
@@ -152,14 +153,14 @@ def profile_follow(request, username):
     author = get_object_or_404(User, username=username)
 
     if request.user == author:
-        return redirect('/follow/')
+        return redirect(reverse('posts:follow_index'))
 
     Follow.objects.get_or_create(
         author=author,
         user=request.user,
     )
 
-    return redirect('/follow/')
+    return redirect(reverse('posts:follow_index'))
 
 
 @login_required
