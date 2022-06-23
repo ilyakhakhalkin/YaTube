@@ -31,7 +31,7 @@ class PostsPagesTests(TestCase):
             description='раз два раз проверка',
             slug='second-test-slug'
         )
-        
+
         cls.post = Post.objects.create(
             text='Текст поста группа 2 юзер 2',
             author=cls.user2,
@@ -103,7 +103,7 @@ class PostsPagesTests(TestCase):
         """Проверка контекста страницы index"""
 
         response = self.authorized_client.get(reverse('posts:index'))
- 
+
         self.assertEquals(
             response.context['page_obj'][0].group,
             self.post2.group
@@ -145,7 +145,6 @@ class PostsPagesTests(TestCase):
             response.context['page_obj'][0].author,
             self.post.author
         )
-
 
     def test_profile_page_show_correct_context(self):
         """Проверка контекста страницы profile,
