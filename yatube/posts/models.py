@@ -121,7 +121,7 @@ class Follow(models.Model):
                 name='unique_subscription'
             ),
             models.CheckConstraint(
-                check=~models.Q(user=models.F('author')),
+                check=~models.Q(author=models.F('user')),
                 name='user_cannot_be_equal_author'
             ),
         ]

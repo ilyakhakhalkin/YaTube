@@ -7,9 +7,9 @@
 {% block content %}
   {% include 'posts/includes/switcher.html' with INDEX=True%}
   
+  <h1>Последние обновления на сайте</h1>
   {% load cache %}
   {% cache 20 index_page page_obj request.user.username %}
-    <h1>Последние обновления на сайте</h1>
     {% for post in page_obj %}
       {% include 'includes/article.html' with SHOW_GROUP_LINK=True SHOW_PROFILE_LINK=True %}
     {% endfor %}

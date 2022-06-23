@@ -10,7 +10,7 @@ from .paginator_custom import paginator_custom
 def index(request):
     template = 'posts/index.html'
 
-    post_list = Post.objects.all()
+    post_list = Post.objects.select_related('author', 'group')
     page_obj = paginator_custom(request, post_list)
 
     context = {
@@ -24,7 +24,7 @@ def group_posts(request, slug):
     template = 'posts/group_list.html'
 
     group = get_object_or_404(Group, slug=slug)
-    post_list = Post.objects.select_related('group').filter(group=group)
+    post_list = Post.objects.select_related('author').filter(group=group)
     page_obj = paginator_custom(request, post_list)
 
     context = {
@@ -37,23 +37,22 @@ def group_posts(request, slug):
 
 def profile(request, username):
     author = get_object_or_404(User, username=username)
-    post_list = author.posts.all()
+    post_list = author.posts.select_related('group').filter(author=author)
     page_obj = paginator_custom(request, post_list)
 
-    context = {
-        'page_obj': page_obj,
-        'author': author,
-    }
-
     following = (
-        (not request.user.is_anonymous)
+        request.user.is_authenticated
         and Follow.objects.filter(
             author=author,
             user=request.user
         ).exists
     )
 
-    context['following'] = following
+    context = {
+        'page_obj': page_obj,
+        'author': author,
+        'following': following
+    }
 
     return render(request, 'posts/profile.html', context)
 
@@ -135,7 +134,6 @@ def follow_index(request):
     if len(posts) == 0:
         empty_page = paginator_custom(request, [])
         context = {
-            'NO_SUBSCRIPTIONS': True,
             'page_obj': empty_page,
         }
     else:
@@ -154,14 +152,14 @@ def profile_follow(request, username):
     author = get_object_or_404(User, username=username)
 
     if request.user == author:
-        return follow_index(request)
+        return redirect('/follow/')
 
     Follow.objects.get_or_create(
         author=author,
         user=request.user,
     )
 
-    return follow_index(request)
+    return redirect('/follow/')
 
 
 @login_required

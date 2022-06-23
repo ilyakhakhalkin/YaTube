@@ -248,17 +248,13 @@ class FormsTest(TestCase):
             'text': 'тестовый коммент'
         }
 
+        count_before = Comment.objects.all().count()
         response = self.client.post(
             reverse('posts:add_comment', kwargs={'post_id': self.post.id}),
             data=form_data,
         )
 
-        self.assertFalse(
-            Comment.objects.filter(
-                post=self.post,
-                author=self.user,
-                text=form_data['text'],
-            ).exists()
-        )
+        count_after = Comment.objects.all().count()
 
+        self.assertEquals(count_before, count_after)
         self.assertEquals(response.status_code, HTTPStatus.FOUND)

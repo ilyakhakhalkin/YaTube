@@ -1,3 +1,4 @@
+from urllib import response
 from django.test import Client, TestCase
 from django.urls import reverse
 
@@ -32,18 +33,13 @@ class PostsPagesTests(TestCase):
     def test_follow(self):
         """Проверка подписок"""
 
-        response = self.follow_author(author=self.user_author, user=self.user)
+        self.follow_author(author=self.user_author, user=self.user)
 
         self.assertTrue(
             Follow.objects.filter(
                 author=self.user_author,
                 user=self.user
             ).exists()
-        )
-
-        self.assertEquals(
-            response.context['page_obj'][0].author,
-            self.user_author
         )
 
         count = Follow.objects.filter(
@@ -59,6 +55,16 @@ class PostsPagesTests(TestCase):
         ).count()
 
         self.assertEquals(count, should_be_the_same_count)
+
+    def test_follow_index_context(self):
+        """Проверка содержимого страницы с подписками"""
+
+        Follow.objects.create(author=self.user_author, user=self.user)
+        response = self.authorized_client.get('/follow/')
+        self.assertEquals(
+            response.context['page_obj'][0].author,
+            self.user_author
+        )
 
     def test_unfollow(self):
         """Проверка отписок"""
